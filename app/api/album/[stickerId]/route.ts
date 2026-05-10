@@ -51,8 +51,7 @@ export async function PATCH(
   let nextCount = existing?.count ?? 0;
   if (parsed.data.owned !== undefined) nextOwned = parsed.data.owned;
   if (parsed.data.count !== undefined) nextCount = parsed.data.count;
-  // Invariants: owned implies count >= 1; not owned implies count == 0.
-  if (nextOwned && nextCount === 0) nextCount = 1;
+  // Only invariant: if not owned, no extras either.
   if (!nextOwned) nextCount = 0;
 
   const result = await prisma.userSticker.upsert({

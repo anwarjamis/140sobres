@@ -220,7 +220,7 @@ export default function CountryDetailPage({
                 name={p.playerName ?? p.code}
                 pos={p.position ?? ""}
                 onMark={() =>
-                  mark.mutate({ stickerId: p.id, owned: true, count: 1 })
+                  mark.mutate({ stickerId: p.id, owned: true, count: 0 })
                 }
                 disabled={mark.isPending}
               />

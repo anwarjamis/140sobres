@@ -51,8 +51,8 @@ export default function RepesPage() {
     if (sticker) {
       setMatchedSticker(sticker);
       setNotFound(false);
-      // Pre-fill with current extras (total minus the one in album).
-      setQty(Math.max(0, (sticker.count ?? 1) - 1));
+      // Pre-fill with current extras count.
+      setQty(Math.max(1, sticker.count ?? 1));
     } else {
       setMatchedSticker(null);
       setNotFound(true);
@@ -62,7 +62,7 @@ export default function RepesPage() {
   function handleAdd() {
     if (!matchedSticker) return;
     mark.mutate(
-      { stickerId: matchedSticker.id, owned: true, count: qty + 1 },
+      { stickerId: matchedSticker.id, count: qty },
       { onSuccess: () => setModalOpen(false) },
     );
   }
@@ -70,7 +70,7 @@ export default function RepesPage() {
   const all = useMemo(() => data?.stickers ?? [], [data]);
 
   const dupes = useMemo(() => {
-    let list = all.filter((s) => s.count > 1);
+    let list = all.filter((s) => s.count > 0);
     if (filter === "x3") list = list.filter((s) => s.count >= 3);
     if (filter === "country") {
       list = [...list].sort((a, b) => a.teamCode.localeCompare(b.teamCode));
@@ -80,16 +80,13 @@ export default function RepesPage() {
     return list;
   }, [all, filter]);
 
-  // Total "available to trade" copies = sum(count - 1) over duplicated stickers.
+  // Total extras = sum of all count values (count = extras directly).
   const totalRepes = useMemo(
-    () =>
-      all
-        .filter((s) => s.count > 1)
-        .reduce((sum, s) => sum + (s.count - 1), 0),
+    () => all.filter((s) => s.count > 0).reduce((sum, s) => sum + s.count, 0),
     [all],
   );
 
-  const uniqueDupes = all.filter((s) => s.count > 1).length;
+  const uniqueDupes = all.filter((s) => s.count > 0).length;
 
   return (
     <>
@@ -285,23 +282,14 @@ export default function RepesPage() {
                     {d.position ? ` · ${d.position}` : ""}
                   </div>
                   <div className="row gap-1 mt-2 items-center">
-                    {Array.from({ length: Math.min(d.count, 5) }).map(
-                      (_, j) => (
-                        <span
-                          key={j}
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 99,
-                            background: "var(--ink)",
-                          }}
-                        />
-                      ),
-                    )}
+                    {Array.from({ length: Math.min(d.count, 5) }).map((_, j) => (
+                      <span
+                        key={j}
+                        style={{ width: 8, height: 8, borderRadius: 99, background: "var(--ink)" }}
+                      />
+                    ))}
                     {d.count > 5 && (
-                      <span className="mono micro muted">
-                        +{d.count - 5}
-                      </span>
+                      <span className="mono micro muted">+{d.count - 5}</span>
                     )}
                   </div>
                 </div>
@@ -323,7 +311,7 @@ export default function RepesPage() {
                       onClick={() =>
                         mark.mutate({
                           stickerId: d.id,
-                          count: Math.max(1, d.count - 1),
+                          count: Math.max(0, d.count - 1),
                         })
                       }
                       style={{
@@ -431,33 +419,50 @@ export default function RepesPage() {
 
             {/* preview del sticker encontrado */}
             {matchedSticker && (
-              <div
-                className="row gap-3 items-center"
-                style={{
-                  marginTop: 10,
-                  padding: "10px 12px",
-                  background: "#f5f4f0",
-                  borderRadius: 12,
-                  border: "1px solid var(--line)",
-                }}
-              >
-                <div style={{ width: 40, flex: "none" }}>
-                  <Sticker
-                    num={String(matchedSticker.number).padStart(2, "0")}
-                    name={matchedSticker.playerName ?? matchedSticker.code}
-                    pos={matchedSticker.position ?? ""}
-                    color={colorOf(matchedSticker.teamCode)}
-                  />
-                </div>
-                <div>
-                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14 }}>
-                    {matchedSticker.playerName ?? matchedSticker.code}
+              <>
+                <div
+                  className="row gap-3 items-center"
+                  style={{
+                    marginTop: 10,
+                    padding: "10px 12px",
+                    background: "#f5f4f0",
+                    borderRadius: 12,
+                    border: "1px solid var(--line)",
+                  }}
+                >
+                  <div style={{ width: 40, flex: "none" }}>
+                    <Sticker
+                      num={String(matchedSticker.number).padStart(2, "0")}
+                      name={matchedSticker.playerName ?? matchedSticker.code}
+                      pos={matchedSticker.position ?? ""}
+                      color={colorOf(matchedSticker.teamCode)}
+                    />
                   </div>
-                  <div className="mono micro muted" style={{ marginTop: 2 }}>
-                    {matchedSticker.teamCode} · #{String(matchedSticker.number).padStart(2, "0")}
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14 }}>
+                      {matchedSticker.playerName ?? matchedSticker.code}
+                    </div>
+                    <div className="mono micro muted" style={{ marginTop: 2 }}>
+                      {matchedSticker.teamCode} · #{String(matchedSticker.number).padStart(2, "0")}
+                    </div>
                   </div>
                 </div>
-              </div>
+                {!matchedSticker.owned && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: "8px 12px",
+                      background: "#fff8e6",
+                      border: "1px solid #f5d87a",
+                      borderRadius: 10,
+                      fontSize: 12,
+                      color: "#7a5c00",
+                    }}
+                  >
+                    ⚠️ Esta lámina no está marcada en tu álbum. Marcala primero desde la vista del país.
+                  </div>
+                )}
+              </>
             )}
 
             {notFound && codeInput.trim().length >= 3 && (
