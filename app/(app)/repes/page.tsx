@@ -159,7 +159,7 @@ export default function RepesPage() {
               style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}
             >
               {totalRepes === 0
-                ? "marcá repes desde la vista de país"
+                ? "usá el botón + Agregar para cargar tus repetidas"
                 : `${uniqueDupes} láminas distintas listas para cambio`}
             </div>
           </div>
