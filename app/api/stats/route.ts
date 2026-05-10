@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 
 const STICKERS_PER_PACK = 7;
 const TOTAL = 980;
+const IDEAL_PACKS = 140;
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -31,32 +32,26 @@ export async function GET() {
     },
   });
 
+  // owned = stickers pegadas en el álbum
   const owned = myRows.filter((r) => r.owned).length;
-  const totalCopies = myRows.reduce((sum, r) => sum + r.count, 0);
-  const sobresAbiertos = Math.max(
-    1,
-    Math.round(totalCopies / STICKERS_PER_PACK),
-  );
 
+  // dupesCount = suma de todas las repetidas (count ya es solo el extra)
   const dupesCount = myRows
-    .filter((r) => r.count > 1)
-    .reduce((sum, r) => sum + (r.count - 1), 0);
+    .filter((r) => r.count > 0)
+    .reduce((sum, r) => sum + r.count, 0);
 
-  // Naive projection: how many more packs to complete the album, given the
-  // user's current "luck" rate of unique-per-pack.
-  const uniquePerPack = sobresAbiertos > 0 ? owned / sobresAbiertos : 0.5;
-  const remaining = TOTAL - owned;
-  const projectedPacks =
-    uniquePerPack > 0 ? Math.round(remaining / uniquePerPack) : remaining;
-  const idealPacks = 140;
-  const ratio =
-    sobresAbiertos + projectedPacks > 0
-      ? (sobresAbiertos + projectedPacks) / idealPacks
-      : 1;
+  // sobresAbiertos = (pegadas + repetidas) / 7
+  const sobresAbiertos = Math.round((owned + dupesCount) / STICKERS_PER_PACK);
 
-  // Top 5 most duplicated.
+  // % del álbum completado
+  const progressFraction = owned / TOTAL;
+
+  // Mínimos sobres para completar = 140 − sobres abiertos (con suerte perfecta)
+  const projectedPacks = Math.max(0, IDEAL_PACKS - sobresAbiertos);
+
+  // Top 5 stickers con más copias extra
   const masCargas = myRows
-    .filter((r) => r.count > 1)
+    .filter((r) => r.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
     .map((r) => ({
@@ -68,8 +63,7 @@ export async function GET() {
       count: r.count,
     }));
 
-  // Stickers I'm missing — use as a stand-in for "rarest" until we have
-  // community data. Show 4 random missing ones with mock community %.
+  // Láminas que más le faltan al usuario (las primeras del listado de no-pegadas)
   const myStickerIds = new Set(myRows.filter((r) => r.owned).map((r) => r.stickerId));
   const allStickers = await prisma.sticker.findMany({
     where: { section: "COUNTRY" },
@@ -88,26 +82,19 @@ export async function GET() {
     teamCode: s.teamCode,
     number: s.number,
     playerName: s.playerName,
-    rarity: 2.1 + i * 1.5, // placeholder community rarity %
+    rarity: 2.1 + i * 1.5,
   }));
 
   return NextResponse.json({
     owned,
     total: TOTAL,
     sobresAbiertos,
-    racha: 0, // TODO: needs daily activity tracking
-    cambios: 0, // TODO: needs swap history
-    projectedPacks,
-    idealPacks,
-    ratio: Math.round(ratio * 10) / 10,
-    progressFraction: Math.min(
-      1,
-      sobresAbiertos / Math.max(1, sobresAbiertos + projectedPacks),
-    ),
     dupesCount,
+    progressFraction,
+    projectedPacks,
+    idealPacks: IDEAL_PACKS,
     masCargas,
     masRaras,
-    // 30-day activity heatmap — all zeros until we track marks per day.
     heatmap: Array.from({ length: 30 }, () => 0),
   });
 }

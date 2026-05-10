@@ -11,11 +11,10 @@ export default function StatsPage() {
   const { data, isLoading } = useStats();
 
   const sobres = data?.sobresAbiertos ?? 0;
-
   const projectedPacks = data?.projectedPacks ?? 0;
-  const ratio = data?.ratio ?? 1;
   const progressFraction = data?.progressFraction ?? 0;
   const dupesCount = data?.dupesCount ?? 0;
+  const owned = data?.owned ?? 0;
   const masCargas = data?.masCargas ?? [];
   const masRaras = data?.masRaras ?? [];
   const heatmap = data?.heatmap ?? Array.from({ length: 30 }, () => 0);
@@ -112,61 +111,41 @@ export default function StatsPage() {
         {/* projection */}
         <div
           className="card mt-3"
-          style={{
-            padding: 14,
-            background: "var(--yellow)",
-            borderColor: "var(--ink)",
-          }}
+          style={{ padding: 14, background: "var(--yellow)", borderColor: "var(--ink)" }}
         >
           <div className="row between items-center">
             <div>
               <div className="micro" style={{ fontWeight: 700 }}>
-                PROYECCIÓN
+                MÍNIMO PARA COMPLETAR
               </div>
-              <div
-                className="display"
-                style={{ fontSize: 22, marginTop: 2 }}
-              >
-                te faltan ~{projectedPacks} sobres
+              <div className="display" style={{ fontSize: 22, marginTop: 2 }}>
+                {projectedPacks > 0 ? `te faltan ${projectedPacks} sobres` : "¡álbum completo!"}
               </div>
-              <div
-                className="mono"
-                style={{
-                  fontSize: 11.5,
-                  color: "var(--ink-3)",
-                  marginTop: 3,
-                }}
-              >
-                al ritmo actual · sin cambios
+              <div className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 3 }}>
+                con suerte perfecta · 140 − {sobres} abiertos
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div
-                className="display"
-                style={{ fontSize: 34, color: "var(--ink)" }}
-              >
-                {ratio}×
+              <div className="display" style={{ fontSize: 34, color: "var(--ink)" }}>
+                {sobres}
               </div>
               <div className="micro" style={{ color: "var(--ink-3)" }}>
-                vs. ideal (140)
+                de 140 sobres
               </div>
             </div>
           </div>
-          <div
-            className="progress-track mt-3"
-            style={{ background: "#00000022" }}
-          >
+          <div className="progress-track mt-3" style={{ background: "#00000022" }}>
             <div
               className="progress-fill"
               style={{
-                width: `${Math.round(progressFraction * 100)}%`,
+                width: `${Math.min(100, Math.round((sobres / 140) * 100))}%`,
                 background: "var(--ink)",
               }}
             />
           </div>
           <div className="row between mt-1">
-            <span className="mono micro">{sobres} abiertos</span>
-            <span className="mono micro">~{projectedPacks} estimados</span>
+            <span className="mono micro">{owned} láminas pegadas</span>
+            <span className="mono micro">{Math.round(progressFraction * 100)}% del álbum</span>
           </div>
         </div>
 
