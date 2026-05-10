@@ -182,14 +182,14 @@ export function AuthCard({ mode }: { mode: Mode }) {
                   />
                 </div>
                 <div className="field grow">
-                  <label htmlFor="city">ciudad</label>
+                  <label htmlFor="city">Comuna/Ciudad</label>
                   <input
                     id="city"
                     type="text"
                     autoComplete="address-level2"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="Buenos Aires"
+                    placeholder="Ñuñoa"
                     required
                   />
                 </div>
