@@ -315,7 +315,7 @@ function AlbumContent() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(12, 1fr)",
+            gridTemplateColumns: "repeat(13, 1fr)",
             gap: 4,
           }}
         >
@@ -324,22 +324,52 @@ function AlbumContent() {
               key={g}
               onClick={() => jumpToGroup(g)}
               className={`gjump ${openGroup === g ? "on" : ""}`}
-              style={{
-                minWidth: 0,
-                padding: 0,
-                height: 28,
-                fontSize: 12,
-              }}
+              style={{ minWidth: 0, padding: 0, height: 28, fontSize: 12 }}
             >
               {g}
             </button>
           ))}
+          <button
+            onClick={() => jumpToGroup("FWC")}
+            className={`gjump ${openGroup === "FWC" ? "on" : ""}`}
+            style={{ minWidth: 0, padding: 0, height: 28, fontSize: 9, fontWeight: 700 }}
+          >
+            FWC
+          </button>
         </div>
       </div>
 
       {/* groups list */}
       <div className="px-4 mt-3" style={{ paddingBottom: 10 }}>
         <div className="col gap-3">
+          {/* 00 — single special sticker, always at top */}
+          {!searchTerm && specialStickers.length > 0 && (
+            <StickerSection
+              label="00"
+              sublabel="Lámina especial"
+              stickers={specialStickers}
+              color="var(--purple)"
+              isOpen={openGroup === "00"}
+              onToggleOpen={() => setGroup(openGroup === "00" ? null : "00")}
+              onToggleSticker={toggleSticker}
+              sectionRef={(el) => { groupRefs.current["00"] = el; }}
+            />
+          )}
+
+          {/* FWC — 19 FIFA World Cup stickers */}
+          {!searchTerm && fwcStickers.length > 0 && (
+            <StickerSection
+              label="FWC"
+              sublabel="FIFA World Cup · 19 láminas"
+              stickers={fwcStickers}
+              color="var(--yellow)"
+              isOpen={openGroup === "FWC"}
+              onToggleOpen={() => setGroup(openGroup === "FWC" ? null : "FWC")}
+              onToggleSticker={toggleSticker}
+              sectionRef={(el) => { groupRefs.current["FWC"] = el; }}
+            />
+          )}
+
           {filteredGroupLetters.length === 0 && (
             <div className="micro muted text-center" style={{ padding: 16 }}>
               No se encontraron selecciones para &ldquo;{searchTerm}&rdquo;
@@ -512,34 +542,6 @@ function AlbumContent() {
             <div className="micro muted text-center" style={{ padding: 8 }}>
               cargando…
             </div>
-          )}
-
-          {/* FWC section */}
-          {!searchTerm && fwcStickers.length > 0 && (
-            <StickerSection
-              label="FWC"
-              sublabel="FIFA World Cup · 19 láminas"
-              stickers={fwcStickers}
-              color="var(--yellow)"
-              isOpen={openGroup === "FWC"}
-              onToggleOpen={() => setGroup(openGroup === "FWC" ? null : "FWC")}
-              onToggleSticker={toggleSticker}
-              sectionRef={(el) => { groupRefs.current["FWC"] = el; }}
-            />
-          )}
-
-          {/* Special (00) section */}
-          {!searchTerm && specialStickers.length > 0 && (
-            <StickerSection
-              label="00"
-              sublabel="Lámina especial"
-              stickers={specialStickers}
-              color="var(--purple)"
-              isOpen={openGroup === "00"}
-              onToggleOpen={() => setGroup(openGroup === "00" ? null : "00")}
-              onToggleSticker={toggleSticker}
-              sectionRef={(el) => { groupRefs.current["00"] = el; }}
-            />
           )}
         </div>
       </div>
