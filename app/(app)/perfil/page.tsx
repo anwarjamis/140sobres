@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession, signOut } from "next-auth/react";
 import { COUNTRY_NAMES } from "@/lib/groups";
 
@@ -10,6 +10,7 @@ type UserProfile = {
   email: string;
   country: string | null;
   city: string | null;
+  availableForSwap: boolean;
   createdAt: string;
 };
 
@@ -21,9 +22,32 @@ async function fetchMe(): Promise<UserProfile> {
 
 export default function PerfilPage() {
   const { data: session } = useSession();
+  const qc = useQueryClient();
   const { data: user, isLoading } = useQuery({
     queryKey: ["me"],
     queryFn: fetchMe,
+  });
+
+  const toggleSwap = useMutation({
+    mutationFn: async (value: boolean) => {
+      const res = await fetch("/api/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availableForSwap: value }),
+      });
+      if (!res.ok) throw new Error("Error actualizando");
+      return res.json();
+    },
+    onMutate: async (value) => {
+      await qc.cancelQueries({ queryKey: ["me"] });
+      const prev = qc.getQueryData<UserProfile>(["me"]);
+      if (prev) qc.setQueryData<UserProfile>(["me"], { ...prev, availableForSwap: value });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["me"], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["me"] }),
   });
 
   const username = session?.user?.name ?? "";
@@ -133,6 +157,55 @@ export default function PerfilPage() {
             loading={isLoading}
             last
           />
+        </div>
+
+        {/* disponibilidad de intercambio */}
+        <div
+          className="card mt-3"
+          style={{ padding: "14px 16px" }}
+        >
+          <div className="row between items-center">
+            <div>
+              <div style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: 14 }}>
+                Disponible para intercambios
+              </div>
+              <div className="mono micro muted" style={{ marginTop: 3 }}>
+                {user?.availableForSwap
+                  ? "aparecés en los resultados de match"
+                  : "no aparecés en los resultados de match"}
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={isLoading || toggleSwap.isPending}
+              onClick={() => toggleSwap.mutate(!(user?.availableForSwap ?? true))}
+              style={{
+                width: 48,
+                height: 28,
+                borderRadius: 99,
+                border: "none",
+                cursor: "pointer",
+                background: user?.availableForSwap ? "var(--green)" : "#ccc",
+                transition: "background 0.2s",
+                position: "relative",
+                flex: "none",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  left: user?.availableForSwap ? 23 : 3,
+                  width: 22,
+                  height: 22,
+                  borderRadius: 99,
+                  background: "#fff",
+                  boxShadow: "0 1px 3px #00000033",
+                  transition: "left 0.2s",
+                }}
+              />
+            </button>
+          </div>
         </div>
 
         {/* logout */}

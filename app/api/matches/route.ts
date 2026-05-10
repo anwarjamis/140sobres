@@ -34,14 +34,14 @@ export async function GET() {
   const myRepes = new Set<string>();
   for (const r of myRows) {
     if (r.owned) myOwned.add(r.stickerId);
-    if (r.owned && r.count > 1) myRepes.add(r.stickerId);
+    if (r.owned && r.count > 0) myRepes.add(r.stickerId);
   }
   // I'm "missing" any sticker I don't own.
   const myMissing = new Set<string>();
   for (const s of allStickers) if (!myOwned.has(s.id)) myMissing.add(s.id);
 
   const others = await prisma.user.findMany({
-    where: { id: { not: me } },
+    where: { id: { not: me }, availableForSwap: true },
     select: {
       id: true,
       username: true,
@@ -57,7 +57,7 @@ export async function GET() {
       const theirRepes = new Set<string>();
       for (const r of u.stickers) {
         if (r.owned) theirOwned.add(r.stickerId);
-        if (r.owned && r.count > 1) theirRepes.add(r.stickerId);
+        if (r.owned && r.count > 0) theirRepes.add(r.stickerId);
       }
 
       // give = my repes that are in their missing.
