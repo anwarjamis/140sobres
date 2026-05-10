@@ -215,6 +215,26 @@ function MasivaContent() {
 
       {/* content */}
       <div className="px-4" style={{ paddingBottom: 112 }}>
+        {/* Special (00) — always first */}
+        {showSpecial && specialStickers.length > 0 && (
+          <SpecialSection
+            title="00"
+            subtitle="Lámina especial"
+            stickers={specialStickers}
+            onToggle={toggle}
+          />
+        )}
+
+        {/* FWC — second */}
+        {showFwc && fwcStickers.length > 0 && (
+          <SpecialSection
+            title="FWC"
+            subtitle="FIFA World Cup"
+            stickers={fwcStickers}
+            onToggle={toggle}
+          />
+        )}
+
         {/* country sections */}
         {visibleTeams.map((teamCode) => {
           const teamStickers = stickersByTeam[teamCode] ?? [];
@@ -238,26 +258,6 @@ function MasivaContent() {
             />
           );
         })}
-
-        {/* FWC section */}
-        {showFwc && fwcStickers.length > 0 && (
-          <SpecialSection
-            title="FWC"
-            subtitle="FIFA World Cup"
-            stickers={fwcStickers}
-            onToggle={toggle}
-          />
-        )}
-
-        {/* Special section */}
-        {showSpecial && specialStickers.length > 0 && (
-          <SpecialSection
-            title="Especiales"
-            subtitle="Láminas especiales"
-            stickers={specialStickers}
-            onToggle={toggle}
-          />
-        )}
 
         {/* empty state */}
         {visibleTeams.length === 0 && !showFwc && !showSpecial && (
