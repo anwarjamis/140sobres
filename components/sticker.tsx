@@ -7,6 +7,7 @@ type StickerProps = {
   color?: string;
   size?: number;
   className?: string;
+  onUnmark?: () => void;
 };
 
 // Canonical owned-sticker card. 3:4 aspect, gradient top with silhouette,
@@ -18,13 +19,15 @@ export function Sticker({
   color = "var(--blue)",
   size,
   className,
+  onUnmark,
 }: StickerProps) {
   const style: CSSProperties = {
     ...(size ? { width: size } : {}),
     ["--st-bg" as string]: `linear-gradient(180deg, ${color}, color-mix(in oklch, ${color} 70%, #000))`,
   };
-  return (
-    <div className={`sticker ${className ?? ""}`} style={style}>
+
+  const inner = (
+    <>
       <div className="top">
         <div className="silhouette" />
         <div className="num mono">{num}</div>
@@ -33,6 +36,26 @@ export function Sticker({
         <div className="name">{name || "—"}</div>
         <div className="pos">{pos}</div>
       </div>
+    </>
+  );
+
+  if (onUnmark) {
+    return (
+      <button
+        type="button"
+        onClick={onUnmark}
+        aria-label={`Desmarcar ${name || `lámina ${num}`}`}
+        className={`sticker ${className ?? ""}`}
+        style={{ ...style, cursor: "pointer" }}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className={`sticker ${className ?? ""}`} style={style}>
+      {inner}
     </div>
   );
 }

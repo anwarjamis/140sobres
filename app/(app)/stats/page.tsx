@@ -2,20 +2,10 @@
 
 import { useStats } from "@/hooks/use-stats";
 import { Sticker } from "@/components/sticker";
-import { Flag } from "@/components/flag";
-import { COUNTRY_NAMES, colorOf } from "@/lib/groups";
+import { colorOf } from "@/lib/groups";
 
 const HEATMAP_SCALE = ["#ececea", "#dfe8df", "#a9d8b8", "#5bb789", "#1fa56a"];
 
-// Static placeholder community leaderboard until we have real cohort data.
-const PAISES_RAPIDOS = [
-  { code: "MEX", days: 18, badge: "local" as const },
-  { code: "BRA", days: 24 },
-  { code: "ARG", days: 27 },
-  { code: "ENG", days: 31 },
-  { code: "FRA", days: 33 },
-  { code: "GHA", days: 62, slow: true as const },
-];
 
 export default function StatsPage() {
   const { data, isLoading } = useStats();
@@ -102,21 +92,21 @@ export default function StatsPage() {
             }}
           >
             <div className="micro" style={{ opacity: 0.85 }}>
-              RACHA
+              REPES
             </div>
             <div className="display" style={{ fontSize: 30, marginTop: 2 }}>
-              {racha}d
+              {dupesCount}
             </div>
             <div className="mono micro" style={{ opacity: 0.85 }}>
-              ★ tu mejor
+              para cambio
             </div>
           </div>
           <div className="card grow" style={{ padding: 12 }}>
-            <div className="micro muted">CAMBIOS</div>
+            <div className="micro muted">COMPLETAS</div>
             <div className="display" style={{ fontSize: 30, marginTop: 2 }}>
-              {cambios}
+              {Math.round(progressFraction * 100)}%
             </div>
-            <div className="mono micro muted">total</div>
+            <div className="mono micro muted">del álbum</div>
           </div>
         </div>
 
@@ -363,95 +353,6 @@ export default function StatsPage() {
               </div>
             </>
           )}
-        </div>
-
-        {/* fastest countries (community placeholder) */}
-        <div className="row between items-end mt-4 mb-2">
-          <div className="display" style={{ fontSize: 18 }}>
-            Países más rápidos
-          </div>
-          <span className="micro muted">comunidad · placeholder</span>
-        </div>
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-          {PAISES_RAPIDOS.map((c, i) => {
-            const max = 62;
-            return (
-              <div
-                key={c.code}
-                className="row gap-3 items-center"
-                style={{
-                  padding: "10px 14px",
-                  borderBottom:
-                    i < PAISES_RAPIDOS.length - 1
-                      ? "1px solid var(--line)"
-                      : "none",
-                }}
-              >
-                <Flag color={colorOf(c.code)} w={22} h={15} />
-                <div className="grow" style={{ minWidth: 0 }}>
-                  <div className="row gap-2 items-center">
-                    <div
-                      style={{
-                        fontFamily: "var(--font-ui)",
-                        fontWeight: 600,
-                        fontSize: 14,
-                      }}
-                    >
-                      {COUNTRY_NAMES[c.code] ?? c.code}
-                    </div>
-                    {c.badge && (
-                      <span
-                        className="tag"
-                        style={{
-                          background: "var(--green)",
-                          color: "#fff",
-                        }}
-                      >
-                        {c.badge}
-                      </span>
-                    )}
-                    {c.slow && (
-                      <span
-                        className="tag"
-                        style={{
-                          background: "#fdebec",
-                          color: "var(--red)",
-                        }}
-                      >
-                        lento
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className="progress-track mt-1"
-                    style={{ height: 5 }}
-                  >
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${(1 - c.days / max) * 100}%`,
-                        background: c.slow
-                          ? "var(--red)"
-                          : "var(--green)",
-                      }}
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{
-                    textAlign: "right",
-                    flex: "none",
-                    minWidth: 46,
-                  }}
-                >
-                  <div className="display" style={{ fontSize: 18 }}>
-                    {c.days}
-                  </div>
-                  <div className="mono micro muted">días</div>
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {/* heatmap */}

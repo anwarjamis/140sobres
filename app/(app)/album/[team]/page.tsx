@@ -207,6 +207,9 @@ export default function CountryDetailPage({
                   name={p.playerName ?? p.code}
                   pos={p.position ?? ""}
                   color={color}
+                  onUnmark={() =>
+                    mark.mutate({ stickerId: p.id, owned: false, count: 0 })
+                  }
                 />
               );
             }

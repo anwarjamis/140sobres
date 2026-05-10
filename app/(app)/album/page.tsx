@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useAlbum } from "@/hooks/use-album";
@@ -18,6 +18,7 @@ export default function AlbumPage() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  const [searchTerm, setSearchTerm] = useState("");
   const stickers = useMemo(() => data?.stickers ?? [], [data]);
 
   // Counts owned per teamCode (only COUNTRY section).
@@ -32,6 +33,28 @@ export default function AlbumPage() {
 
   const totalOwned = stickers.filter((s) => s.owned).length;
   const totalAll = 980;
+
+  // Filter groups by search term (matches country name or code).
+  const filteredGroupLetters = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return GROUP_LETTERS;
+    return GROUP_LETTERS.filter((g) =>
+      GROUPS[g].some(
+        (code) =>
+          code.toLowerCase().includes(q) ||
+          (COUNTRY_NAMES[code] ?? "").toLowerCase().includes(q),
+      ),
+    );
+  }, [searchTerm]);
+
+  // Auto-open the single matching group when searching.
+  useEffect(() => {
+    if (searchTerm && filteredGroupLetters.length === 1) {
+      setOpenGroup(filteredGroupLetters[0]);
+    } else if (!searchTerm) {
+      setOpenGroup(null);
+    }
+  }, [searchTerm, filteredGroupLetters]);
   const pct = Math.round((totalOwned / totalAll) * 100);
 
   const username = session?.user?.name ?? "";
@@ -151,7 +174,7 @@ export default function AlbumPage() {
         </div>
       </div>
 
-      {/* search (decorative until we have player names) */}
+      {/* search */}
       <div className="px-4 mt-3">
         <div className="search">
           <svg
@@ -166,7 +189,37 @@ export default function AlbumPage() {
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
-          <span>Buscar jugador o N° de lámina…</span>
+          <input
+            type="search"
+            placeholder="Buscar selección…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              flex: 1,
+              fontSize: 14,
+              color: "var(--ink)",
+            }}
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              style={{
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                color: "var(--muted)",
+                padding: 0,
+                fontSize: 16,
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 
@@ -215,7 +268,12 @@ export default function AlbumPage() {
       {/* groups list */}
       <div className="px-4 mt-3" style={{ paddingBottom: 10 }}>
         <div className="col gap-3">
-          {GROUP_LETTERS.map((g) => {
+          {filteredGroupLetters.length === 0 && (
+            <div className="micro muted text-center" style={{ padding: 16 }}>
+              No se encontraron selecciones para "{searchTerm}"
+            </div>
+          )}
+          {filteredGroupLetters.map((g) => {
             const teams = GROUPS[g];
             const total = teams.reduce(
               (a, t) => a + (ownedByTeam[t] ?? 0),

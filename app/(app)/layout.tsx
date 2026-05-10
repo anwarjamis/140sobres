@@ -16,7 +16,7 @@ export default function AppLayout({
         <main className="flex-1 overflow-y-auto min-h-0">
           {/* On mobile, content stays in the phone-sized column.
               On desktop, expand to a comfortable reading width. */}
-          <div className="mx-auto w-full max-w-[430px] md:max-w-3xl">
+          <div className="mx-auto w-full max-w-[430px] md:max-w-3xl md:pb-0 pb-28">
             {children}
           </div>
         </main>
