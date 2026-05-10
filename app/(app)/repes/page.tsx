@@ -51,8 +51,8 @@ export default function RepesPage() {
     if (sticker) {
       setMatchedSticker(sticker);
       setNotFound(false);
-      // Pre-fill qty with current count + 1.
-      setQty((sticker.count ?? 0) + 1);
+      // Pre-fill with current extras (total minus the one in album).
+      setQty(Math.max(0, (sticker.count ?? 1) - 1));
     } else {
       setMatchedSticker(null);
       setNotFound(true);
@@ -62,7 +62,7 @@ export default function RepesPage() {
   function handleAdd() {
     if (!matchedSticker) return;
     mark.mutate(
-      { stickerId: matchedSticker.id, owned: true, count: qty },
+      { stickerId: matchedSticker.id, owned: true, count: qty + 1 },
       { onSuccess: () => setModalOpen(false) },
     );
   }
@@ -469,11 +469,11 @@ export default function RepesPage() {
             {/* cantidad */}
             {matchedSticker && (
               <div className="field" style={{ marginTop: 12 }}>
-                <label>cantidad total que tenés</label>
+                <label>¿cuántas repetidas tenés?</label>
                 <div className="row items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    onClick={() => setQty((q) => Math.max(0, q - 1))}
                     style={{
                       width: 36, height: 36, borderRadius: 10,
                       border: "1px solid var(--line)", background: "#fff",
@@ -493,7 +493,7 @@ export default function RepesPage() {
                     }}
                   >+</button>
                   <span className="mono micro muted">
-                    {qty > 1 ? `${qty - 1} para cambio` : "solo la original"}
+                    {qty === 0 ? "ninguna para cambio" : `${qty} para cambio`}
                   </span>
                 </div>
               </div>
