@@ -452,7 +452,7 @@ function StickerBadge({
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      {sticker.number}
+      {sticker.number === 0 ? "00" : sticker.number}
     </button>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAlbum } from "@/hooks/use-album";
+import { useMarkSticker } from "@/hooks/use-mark-sticker";
 import {
   GROUPS,
   GROUP_LETTERS,
@@ -12,6 +13,7 @@ import {
   colorOf,
 } from "@/lib/groups";
 import { Flag } from "@/components/flag";
+import type { AlbumSticker } from "@/lib/types";
 
 // useSearchParams() requires a Suspense boundary in Next.js 14.
 export default function AlbumPage() {
@@ -25,6 +27,7 @@ export default function AlbumPage() {
 function AlbumContent() {
   const { data: session } = useSession();
   const { data, isLoading } = useAlbum();
+  const mark = useMarkSticker();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -56,6 +59,19 @@ function AlbumContent() {
 
   const totalOwned = stickers.filter((s) => s.owned).length;
   const totalAll = 980;
+
+  const fwcStickers = useMemo(
+    () => stickers.filter((s) => s.section === "FWC").sort((a, b) => a.number - b.number),
+    [stickers],
+  );
+  const specialStickers = useMemo(
+    () => stickers.filter((s) => s.section === "SPECIAL").sort((a, b) => a.number - b.number),
+    [stickers],
+  );
+
+  function toggleSticker(s: AlbumSticker) {
+    mark.mutate({ stickerId: s.id, owned: !s.owned, count: s.owned ? 0 : s.count });
+  }
 
   // Filter groups by search term (matches country name or code).
   const filteredGroupLetters = useMemo(() => {
@@ -497,8 +513,155 @@ function AlbumContent() {
               cargando…
             </div>
           )}
+
+          {/* FWC section */}
+          {!searchTerm && fwcStickers.length > 0 && (
+            <StickerSection
+              label="FWC"
+              sublabel="FIFA World Cup · 19 láminas"
+              stickers={fwcStickers}
+              color="var(--yellow)"
+              isOpen={openGroup === "FWC"}
+              onToggleOpen={() => setGroup(openGroup === "FWC" ? null : "FWC")}
+              onToggleSticker={toggleSticker}
+              sectionRef={(el) => { groupRefs.current["FWC"] = el; }}
+            />
+          )}
+
+          {/* Special (00) section */}
+          {!searchTerm && specialStickers.length > 0 && (
+            <StickerSection
+              label="00"
+              sublabel="Lámina especial"
+              stickers={specialStickers}
+              color="var(--purple)"
+              isOpen={openGroup === "00"}
+              onToggleOpen={() => setGroup(openGroup === "00" ? null : "00")}
+              onToggleSticker={toggleSticker}
+              sectionRef={(el) => { groupRefs.current["00"] = el; }}
+            />
+          )}
         </div>
       </div>
     </>
+  );
+}
+
+function StickerSection({
+  label,
+  sublabel,
+  stickers,
+  color,
+  isOpen,
+  onToggleOpen,
+  onToggleSticker,
+  sectionRef,
+}: {
+  label: string;
+  sublabel: string;
+  stickers: AlbumSticker[];
+  color: string;
+  isOpen: boolean;
+  onToggleOpen: () => void;
+  onToggleSticker: (s: AlbumSticker) => void;
+  sectionRef: (el: HTMLDivElement | null) => void;
+}) {
+  const owned = stickers.filter((s) => s.owned).length;
+  const total = stickers.length;
+
+  return (
+    <div
+      ref={sectionRef}
+      className="card"
+      style={{ padding: 0, overflow: "hidden" }}
+    >
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        className="row items-center between w-full text-left"
+        style={{
+          padding: "12px 14px",
+          background: "var(--paper-2)",
+          borderBottom: isOpen ? "1px solid var(--line)" : "none",
+          border: "none",
+          cursor: "pointer",
+        }}
+        aria-expanded={isOpen}
+      >
+        <div className="row items-center gap-3">
+          <div
+            className="gletter"
+            style={{ background: isOpen ? color : "var(--ink)", fontSize: 11 }}
+          >
+            {label}
+          </div>
+          <div>
+            <div className="display" style={{ fontSize: 16 }}>{label}</div>
+            <div className="micro muted">{sublabel}</div>
+          </div>
+        </div>
+        <div className="col" style={{ alignItems: "flex-end", gap: 4 }}>
+          <div className="mono" style={{ fontSize: 12, fontWeight: 600 }}>
+            {owned}/{total}
+          </div>
+          <div style={{ width: 54, height: 4 }} className="progress-track">
+            <div
+              className="progress-fill"
+              style={{
+                width: total > 0 ? `${Math.round((owned / total) * 100)}%` : "0%",
+                background: owned === total ? "var(--green)" : "var(--ink)",
+              }}
+            />
+          </div>
+        </div>
+      </button>
+
+      <div
+        style={{
+          maxHeight: isOpen ? 400 : 0,
+          overflow: "hidden",
+          transition: "max-height 220ms ease-out",
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 14px",
+            display: "grid",
+            gridTemplateColumns: "repeat(10, 1fr)",
+            gap: 4,
+          }}
+        >
+          {stickers.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => onToggleSticker(s)}
+              title={s.playerName ?? s.code}
+              style={{
+                aspectRatio: "1",
+                borderRadius: 6,
+                border: s.owned ? "none" : "1.5px solid var(--line-2)",
+                background: s.owned ? color : "#f4f4f2",
+                color: s.owned
+                  ? ["var(--yellow)", "var(--orange)", "#fafafa"].includes(color) ? "var(--ink)" : "#fff"
+                  : "var(--muted)",
+                fontFamily: "var(--font-mono)",
+                fontWeight: 700,
+                fontSize: 11,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                transition: "background 0.12s",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              {s.number === 0 ? "00" : s.number}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
