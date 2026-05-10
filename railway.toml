@@ -1,2 +1,2 @@
 [deploy]
-preDeployCommand = "npx prisma db push --skip-generate"
+preDeployCommand = "npx prisma db push --skip-generate && npx prisma db seed"
