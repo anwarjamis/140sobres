@@ -122,7 +122,7 @@ export function CountrySelect({
               overflowY: "auto",
             }}
           >
-            <div style={{ padding: "8px 8px", stickyPosition: "sticky", top: 0 }}>
+            <div style={{ padding: "8px 8px", position: "sticky", top: 0 }}>
               <input
                 ref={inputRef}
                 type="text"
