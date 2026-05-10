@@ -5,12 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 export type StatsData = {
   owned: number;
   total: number;
+  totalUsers: number;
   sobresAbiertos: number;
-  racha: number;
-  cambios: number;
   projectedPacks: number;
   idealPacks: number;
-  ratio: number;
   progressFraction: number;
   dupesCount: number;
   masCargas: Array<{
@@ -28,6 +26,7 @@ export type StatsData = {
     number: number;
     playerName: string | null;
     rarity: number;
+    ownerCount: number;
   }>;
   heatmap: number[];
 };
@@ -42,6 +41,6 @@ export function useStats() {
   return useQuery({
     queryKey: ["stats"],
     queryFn: fetchStats,
-    refetchInterval: 5 * 60 * 1000, // 5 min
+    refetchInterval: 5 * 60 * 1000,
   });
 }

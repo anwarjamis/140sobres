@@ -68,11 +68,12 @@ model Sticker {
 }
 
 model UserSticker {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   stickerId String
-  owned     Boolean @default(false)
-  count     Int     @default(0)
+  owned     Boolean  @default(false)
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   sticker Sticker @relation(fields: [stickerId], references: [id], onDelete: Cascade)

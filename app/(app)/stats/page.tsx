@@ -15,6 +15,7 @@ export default function StatsPage() {
   const progressFraction = data?.progressFraction ?? 0;
   const dupesCount = data?.dupesCount ?? 0;
   const owned = data?.owned ?? 0;
+  const totalUsers = data?.totalUsers ?? 1;
   const masCargas = data?.masCargas ?? [];
   const masRaras = data?.masRaras ?? [];
   const heatmap = data?.heatmap ?? Array.from({ length: 30 }, () => 0);
@@ -122,7 +123,7 @@ export default function StatsPage() {
                 {projectedPacks > 0 ? `te faltan ${projectedPacks} sobres` : "¡álbum completo!"}
               </div>
               <div className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 3 }}>
-                con suerte perfecta · 140 − {sobres} abiertos
+                con suerte perfecta · sin intercambios
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -154,7 +155,7 @@ export default function StatsPage() {
           <div className="display" style={{ fontSize: 18 }}>
             Las más raras
           </div>
-          <span className="micro muted">% que las tiene</span>
+          <span className="micro muted">{totalUsers} coleccionistas</span>
         </div>
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           {masRaras.length === 0 && (
@@ -244,9 +245,9 @@ export default function StatsPage() {
         {/* most duplicated */}
         <div className="row between items-end mt-4 mb-2">
           <div className="display" style={{ fontSize: 18 }}>
-            Las que más cargás
+            Las que más salen
           </div>
-          <span className="micro muted">tus dobles · top 5</span>
+          <span className="micro muted">más repetidas · comunidad</span>
         </div>
         <div className="card" style={{ padding: 14 }}>
           {masCargas.length === 0 ? (
@@ -319,14 +320,9 @@ export default function StatsPage() {
               </div>
               <div className="divider mt-3" />
               <div className="row between mt-2">
-                <span className="micro muted">
-                  {dupesCount} copias para cambio
-                </span>
-                <span
-                  className="mono micro"
-                  style={{ fontWeight: 700 }}
-                >
-                  ≈ {dupesCount} cambios posibles
+                <span className="micro muted">entre toda la comunidad</span>
+                <span className="mono micro" style={{ fontWeight: 700 }}>
+                  {totalUsers} coleccionistas
                 </span>
               </div>
             </>

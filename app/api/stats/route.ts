@@ -15,79 +15,116 @@ export async function GET() {
 
   const me = session.user.id;
 
-  const myRows = await prisma.userSticker.findMany({
-    where: { userId: me },
-    include: {
-      sticker: {
-        select: {
-          id: true,
-          code: true,
-          number: true,
-          teamCode: true,
-          playerName: true,
-          position: true,
-          section: true,
+  const [myRows, totalUsers] = await Promise.all([
+    prisma.userSticker.findMany({
+      where: { userId: me },
+      include: {
+        sticker: {
+          select: {
+            id: true,
+            code: true,
+            number: true,
+            teamCode: true,
+            playerName: true,
+            section: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.user.count(),
+  ]);
 
-  // owned = stickers pegadas en el álbum
+  // ---- mis números ----
   const owned = myRows.filter((r) => r.owned).length;
-
-  // dupesCount = suma de todas las repetidas (count ya es solo el extra)
-  const dupesCount = myRows
-    .filter((r) => r.count > 0)
-    .reduce((sum, r) => sum + r.count, 0);
-
-  // sobresAbiertos = (pegadas + repetidas) / 7
+  const dupesCount = myRows.filter((r) => r.count > 0).reduce((s, r) => s + r.count, 0);
   const sobresAbiertos = Math.round((owned + dupesCount) / STICKERS_PER_PACK);
-
-  // % del álbum completado
   const progressFraction = owned / TOTAL;
-
-  // Mínimos sobres para completar = 140 − sobres abiertos (con suerte perfecta)
   const projectedPacks = Math.max(0, IDEAL_PACKS - sobresAbiertos);
 
-  // Top 5 stickers con más copias extra
-  const masCargas = myRows
-    .filter((r) => r.count > 0)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map((r) => ({
-      stickerId: r.sticker.id,
-      code: r.sticker.code,
-      teamCode: r.sticker.teamCode,
-      number: r.sticker.number,
-      playerName: r.sticker.playerName,
-      count: r.count,
-    }));
+  // ---- actividad · últimos 30 días ----
+  // updatedAt refleja la última vez que la fila cambió (marcado/desmarcado/repe)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const recentOwned = myRows.filter(
+    (r) => r.owned && r.updatedAt >= thirtyDaysAgo,
+  );
+  const heatmap = Array<number>(30).fill(0);
+  for (const r of recentOwned) {
+    const daysAgo = Math.floor(
+      (Date.now() - r.updatedAt.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (daysAgo >= 0 && daysAgo < 30) heatmap[29 - daysAgo]++;
+  }
 
-  // Láminas que más le faltan al usuario (las primeras del listado de no-pegadas)
-  const myStickerIds = new Set(myRows.filter((r) => r.owned).map((r) => r.stickerId));
-  const allStickers = await prisma.sticker.findMany({
-    where: { section: "COUNTRY" },
-    select: {
-      id: true,
-      code: true,
-      teamCode: true,
-      number: true,
-      playerName: true,
-    },
+  // ---- las más raras: % de usuarios que la tienen (comunidad) ----
+  // Pedir top-10 stickers con menos dueños; mostrar 4
+  const ownedCounts = await prisma.userSticker.groupBy({
+    by: ["stickerId"],
+    where: { owned: true },
+    _count: { stickerId: true },
+    orderBy: { _count: { stickerId: "asc" } },
+    take: 20,
   });
-  const missingPool = allStickers.filter((s) => !myStickerIds.has(s.id));
-  const masRaras = missingPool.slice(0, 4).map((s, i) => ({
-    stickerId: s.id,
-    code: s.code,
-    teamCode: s.teamCode,
-    number: s.number,
-    playerName: s.playerName,
-    rarity: 2.1 + i * 1.5,
-  }));
+
+  // Enriquecer con datos del sticker
+  const rareIds = ownedCounts.map((r) => r.stickerId);
+  const rareStickerData = await prisma.sticker.findMany({
+    where: { id: { in: rareIds } },
+    select: { id: true, code: true, teamCode: true, number: true, playerName: true },
+  });
+  const rareStickerMap = new Map(rareStickerData.map((s) => [s.id, s]));
+
+  const masRaras = ownedCounts
+    .map((r) => {
+      const s = rareStickerMap.get(r.stickerId);
+      if (!s) return null;
+      return {
+        stickerId: s.id,
+        code: s.code,
+        teamCode: s.teamCode,
+        number: s.number,
+        playerName: s.playerName,
+        ownerCount: r._count.stickerId,
+        rarity: Math.round((r._count.stickerId / totalUsers) * 100),
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+
+  // ---- las que más salen: suma de extras en toda la comunidad ----
+  const topDupesRaw = await prisma.userSticker.groupBy({
+    by: ["stickerId"],
+    where: { count: { gt: 0 } },
+    _sum: { count: true },
+    orderBy: { _sum: { count: "desc" } },
+    take: 5,
+  });
+
+  const topIds = topDupesRaw.map((r) => r.stickerId);
+  const topStickerData = await prisma.sticker.findMany({
+    where: { id: { in: topIds } },
+    select: { id: true, code: true, teamCode: true, number: true, playerName: true },
+  });
+  const topStickerMap = new Map(topStickerData.map((s) => [s.id, s]));
+
+  const masCargas = topDupesRaw
+    .map((r) => {
+      const s = topStickerMap.get(r.stickerId);
+      if (!s) return null;
+      return {
+        stickerId: s.id,
+        code: s.code,
+        teamCode: s.teamCode,
+        number: s.number,
+        playerName: s.playerName,
+        count: r._sum.count ?? 0,
+      };
+    })
+    .filter(Boolean);
 
   return NextResponse.json({
     owned,
     total: TOTAL,
+    totalUsers,
     sobresAbiertos,
     dupesCount,
     progressFraction,
@@ -95,6 +132,6 @@ export async function GET() {
     idealPacks: IDEAL_PACKS,
     masCargas,
     masRaras,
-    heatmap: Array.from({ length: 30 }, () => 0),
+    heatmap,
   });
 }
