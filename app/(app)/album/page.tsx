@@ -270,7 +270,7 @@ export default function AlbumPage() {
         <div className="col gap-3">
           {filteredGroupLetters.length === 0 && (
             <div className="micro muted text-center" style={{ padding: 16 }}>
-              No se encontraron selecciones para "{searchTerm}"
+              No se encontraron selecciones para &quot;{searchTerm}&quot;
             </div>
           )}
           {filteredGroupLetters.map((g) => {

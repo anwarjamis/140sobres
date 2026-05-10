@@ -11,8 +11,6 @@ export default function StatsPage() {
   const { data, isLoading } = useStats();
 
   const sobres = data?.sobresAbiertos ?? 0;
-  const racha = data?.racha ?? 0;
-  const cambios = data?.cambios ?? 0;
   const projectedPacks = data?.projectedPacks ?? 0;
   const ratio = data?.ratio ?? 1;
   const progressFraction = data?.progressFraction ?? 0;
