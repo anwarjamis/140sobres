@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -13,7 +13,16 @@ import {
 } from "@/lib/groups";
 import { Flag } from "@/components/flag";
 
+// useSearchParams() requires a Suspense boundary in Next.js 14.
 export default function AlbumPage() {
+  return (
+    <Suspense>
+      <AlbumContent />
+    </Suspense>
+  );
+}
+
+function AlbumContent() {
   const { data: session } = useSession();
   const { data, isLoading } = useAlbum();
   const router = useRouter();
