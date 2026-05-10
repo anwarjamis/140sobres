@@ -1,0 +1,63 @@
+// Prisma schema for 140sobres
+//
+// Local dev: SQLite (file:./dev.db)
+// Production: PostgreSQL (Railway). To deploy:
+//   1. change `provider` to "postgresql"
+//   2. set DATABASE_URL to the Railway connection string
+//   3. run `npx prisma migrate deploy`
+//
+// The schema is intentionally written without enums or
+// provider-specific column types so both providers work.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  country      String?
+  city         String?
+  createdAt    DateTime @default(now())
+
+  stickers UserSticker[]
+}
+
+model Sticker {
+  id         String  @id @default(cuid())
+  code       String  @unique
+  number     Int
+  section    String
+  teamCode   String
+  group      String?
+  playerName String?
+  position   String?
+
+  users UserSticker[]
+
+  @@index([section])
+  @@index([teamCode])
+  @@index([group])
+}
+
+model UserSticker {
+  id        String  @id @default(cuid())
+  userId    String
+  stickerId String
+  owned     Boolean @default(false)
+  count     Int     @default(0)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sticker Sticker @relation(fields: [stickerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stickerId])
+  @@index([userId])
+  @@index([stickerId])
+}
