@@ -198,6 +198,38 @@ function AlbumContent() {
         </div>
       </div>
 
+      {/* quick actions row */}
+      <div className="px-4 mt-3 row gap-2">
+        <Link
+          href="/album/masiva"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            height: 34,
+            paddingLeft: 14,
+            paddingRight: 14,
+            borderRadius: 99,
+            border: "1.5px solid var(--line-2)",
+            background: "#fff",
+            color: "var(--ink)",
+            fontFamily: "var(--font-ui)",
+            fontWeight: 600,
+            fontSize: 13,
+            textDecoration: "none",
+            flex: "none",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          Carga masiva
+        </Link>
+      </div>
+
       {/* search */}
       <div className="px-4 mt-3">
         <div className="search">
