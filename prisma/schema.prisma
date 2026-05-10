@@ -73,7 +73,7 @@ model UserSticker {
   stickerId String
   owned     Boolean  @default(false)
   count     Int      @default(0)
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   sticker Sticker @relation(fields: [stickerId], references: [id], onDelete: Cascade)
