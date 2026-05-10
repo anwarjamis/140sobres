@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAlbum } from "@/hooks/use-album";
 import {
@@ -15,8 +16,21 @@ import { Flag } from "@/components/flag";
 export default function AlbumPage() {
   const { data: session } = useSession();
   const { data, isLoading } = useAlbum();
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Restore open group from URL param ?g=A when navigating back.
+  const [openGroup, setOpenGroup] = useState<string | null>(
+    searchParams.get("g"),
+  );
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Keep URL in sync with open group.
+  function setGroup(g: string | null) {
+    setOpenGroup(g);
+    const url = g ? `/album?g=${g}` : "/album";
+    router.replace(url, { scroll: false });
+  }
 
   const [searchTerm, setSearchTerm] = useState("");
   const stickers = useMemo(() => data?.stickers ?? [], [data]);
@@ -50,10 +64,11 @@ export default function AlbumPage() {
   // Auto-open the single matching group when searching.
   useEffect(() => {
     if (searchTerm && filteredGroupLetters.length === 1) {
-      setOpenGroup(filteredGroupLetters[0]);
+      setGroup(filteredGroupLetters[0]);
     } else if (!searchTerm) {
-      setOpenGroup(null);
+      setGroup(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, filteredGroupLetters]);
   const pct = Math.round((totalOwned / totalAll) * 100);
 
@@ -61,7 +76,7 @@ export default function AlbumPage() {
   const initial = username.slice(0, 1).toUpperCase() || "·";
 
   function jumpToGroup(g: string) {
-    setOpenGroup(g);
+    setGroup(g);
     requestAnimationFrame(() => {
       groupRefs.current[g]?.scrollIntoView({
         behavior: "smooth",
@@ -293,7 +308,7 @@ export default function AlbumPage() {
               >
                 <button
                   type="button"
-                  onClick={() => setOpenGroup(isOpen ? null : g)}
+                  onClick={() => setGroup(isOpen ? null : g)}
                   className="row items-center between w-full text-left"
                   style={{
                     padding: "12px 14px",

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useAlbum } from "@/hooks/use-album";
 import { useMarkSticker } from "@/hooks/use-mark-sticker";
 import { Sticker } from "@/components/sticker";
 import { colorOf } from "@/lib/groups";
+import type { AlbumSticker } from "@/lib/types";
 
 type Filter = "all" | "x3" | "country";
 
@@ -12,6 +13,59 @@ export default function RepesPage() {
   const { data, isLoading } = useAlbum();
   const mark = useMarkSticker();
   const [filter, setFilter] = useState<Filter>("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [qty, setQty] = useState(1);
+  const [matchedSticker, setMatchedSticker] = useState<AlbumSticker | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const codeRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus input when modal opens.
+  useEffect(() => {
+    if (modalOpen) {
+      setCodeInput("");
+      setQty(1);
+      setMatchedSticker(null);
+      setNotFound(false);
+      setTimeout(() => codeRef.current?.focus(), 80);
+    }
+  }, [modalOpen]);
+
+  // Live-search sticker by code as user types.
+  useEffect(() => {
+    const q = codeInput.trim().toUpperCase();
+    if (!q || !data) {
+      setMatchedSticker(null);
+      setNotFound(false);
+      return;
+    }
+    // Try exact match first, then with zero-padded number (ARG7 → ARG07).
+    const sticker =
+      data.stickers.find((s) => s.code === q) ??
+      data.stickers.find((s) => {
+        const letters = q.match(/^[A-Z]+/)?.[0] ?? "";
+        const digits = q.match(/\d+$/)?.[0] ?? "";
+        if (!letters || !digits) return false;
+        return s.code === `${letters}${digits.padStart(2, "0")}`;
+      });
+    if (sticker) {
+      setMatchedSticker(sticker);
+      setNotFound(false);
+      // Pre-fill qty with current count + 1.
+      setQty((sticker.count ?? 0) + 1);
+    } else {
+      setMatchedSticker(null);
+      setNotFound(true);
+    }
+  }, [codeInput, data]);
+
+  function handleAdd() {
+    if (!matchedSticker) return;
+    mark.mutate(
+      { stickerId: matchedSticker.id, owned: true, count: qty },
+      { onSuccess: () => setModalOpen(false) },
+    );
+  }
 
   const all = useMemo(() => data?.stickers ?? [], [data]);
 
@@ -45,11 +99,7 @@ export default function RepesPage() {
           <div>
             <div
               className="ui"
-              style={{
-                fontSize: 12,
-                color: "var(--muted)",
-                fontWeight: 600,
-              }}
+              style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}
             >
               tu inventario
             </div>
@@ -57,6 +107,17 @@ export default function RepesPage() {
               Mis repes
             </h1>
           </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="btn btn-red"
+            style={{ gap: 6, paddingLeft: 12, paddingRight: 14 }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Agregar
+          </button>
         </div>
       </div>
 
@@ -319,6 +380,148 @@ export default function RepesPage() {
           })}
         </div>
       </div>
+
+      {/* modal: agregar repetida */}
+      {modalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "#00000066",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "flex-end",
+            padding: "0 0 16px",
+          }}
+          onClick={(e) => e.target === e.currentTarget && setModalOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 430,
+              margin: "0 auto",
+              background: "var(--paper)",
+              borderRadius: "24px 24px 16px 16px",
+              padding: "20px 20px 24px",
+              boxShadow: "0 -8px 40px #00000022",
+            }}
+          >
+            {/* drag handle */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: "var(--line)" }} />
+            </div>
+
+            <div className="display" style={{ fontSize: 20, marginBottom: 16 }}>
+              Agregar repetida
+            </div>
+
+            {/* código */}
+            <div className="field">
+              <label>código de lámina</label>
+              <input
+                ref={codeRef}
+                type="text"
+                placeholder="ej: ARG7 o MEX03"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                style={{ textTransform: "uppercase" }}
+                autoComplete="off"
+              />
+            </div>
+
+            {/* preview del sticker encontrado */}
+            {matchedSticker && (
+              <div
+                className="row gap-3 items-center"
+                style={{
+                  marginTop: 10,
+                  padding: "10px 12px",
+                  background: "#f5f4f0",
+                  borderRadius: 12,
+                  border: "1px solid var(--line)",
+                }}
+              >
+                <div style={{ width: 40, flex: "none" }}>
+                  <Sticker
+                    num={String(matchedSticker.number).padStart(2, "0")}
+                    name={matchedSticker.playerName ?? matchedSticker.code}
+                    pos={matchedSticker.position ?? ""}
+                    color={colorOf(matchedSticker.teamCode)}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14 }}>
+                    {matchedSticker.playerName ?? matchedSticker.code}
+                  </div>
+                  <div className="mono micro muted" style={{ marginTop: 2 }}>
+                    {matchedSticker.teamCode} · #{String(matchedSticker.number).padStart(2, "0")}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {notFound && codeInput.trim().length >= 3 && (
+              <div className="mono micro" style={{ marginTop: 8, color: "var(--red)" }}>
+                No se encontró la lámina &ldquo;{codeInput.toUpperCase()}&rdquo;
+              </div>
+            )}
+
+            {/* cantidad */}
+            {matchedSticker && (
+              <div className="field" style={{ marginTop: 12 }}>
+                <label>cantidad total que tenés</label>
+                <div className="row items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      border: "1px solid var(--line)", background: "#fff",
+                      fontSize: 18, cursor: "pointer", flex: "none",
+                    }}
+                  >−</button>
+                  <div className="display" style={{ fontSize: 28, minWidth: 40, textAlign: "center" }}>
+                    {qty}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQty((q) => q + 1)}
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      border: "1px solid var(--ink)", background: "var(--ink)",
+                      color: "#fff", fontSize: 18, cursor: "pointer", flex: "none",
+                    }}
+                  >+</button>
+                  <span className="mono micro muted">
+                    {qty > 1 ? `${qty - 1} para cambio` : "solo la original"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* actions */}
+            <div className="col gap-2" style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!matchedSticker || mark.isPending}
+                className="btn btn-red"
+                style={{ width: "100%", justifyContent: "center", opacity: !matchedSticker ? 0.4 : 1 }}
+              >
+                {mark.isPending ? "Guardando…" : "Guardar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="btn btn-ghost"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
