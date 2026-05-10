@@ -211,7 +211,7 @@ export default function PerfilPage() {
         {/* logout */}
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
           className="btn mt-4"
           style={{
             width: "100%",
