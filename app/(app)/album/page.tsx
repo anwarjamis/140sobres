@@ -10,7 +10,6 @@ import {
   GROUPS,
   GROUP_LETTERS,
   COUNTRY_NAMES,
-  colorOf,
 } from "@/lib/groups";
 import { Flag } from "@/components/flag";
 import type { AlbumSticker } from "@/lib/types";
@@ -490,7 +489,7 @@ function AlbumContent() {
                             className="row items-center gap-2"
                             style={{ minWidth: 0 }}
                           >
-                            <Flag color={colorOf(teamCode)} w={20} h={14} />
+                            <Flag code={teamCode} w={20} h={14} />
                             <div style={{ minWidth: 0 }}>
                               <div
                                 style={{

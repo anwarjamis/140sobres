@@ -227,6 +227,7 @@ function MasivaContent() {
           return (
             <TeamSection
               key={teamCode}
+              teamCode={teamCode}
               name={name}
               groupLabel={`Grupo ${group}`}
               color={color}
@@ -281,6 +282,7 @@ function MasivaContent() {
 // ---------- sub-components ----------
 
 function TeamSection({
+  teamCode,
   name,
   groupLabel,
   color,
@@ -289,6 +291,7 @@ function TeamSection({
   total,
   onToggle,
 }: {
+  teamCode: string;
   name: string;
   groupLabel: string;
   color: string;
@@ -304,7 +307,7 @@ function TeamSection({
       {/* team header */}
       <div className="row between items-center" style={{ marginBottom: 10 }}>
         <div className="row gap-2 items-center">
-          <Flag color={color} w={22} h={15} />
+          <Flag code={teamCode} color={color} w={22} h={15} />
           <span
             className="display"
             style={{ fontSize: 16 }}

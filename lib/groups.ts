@@ -147,3 +147,37 @@ export const COUNTRY_COLORS: Record<string, string> = {
 export function colorOf(teamCode: string): string {
   return COUNTRY_COLORS[teamCode] ?? "var(--blue)";
 }
+
+// FIFA 3-letter code → ISO 3166-1 alpha-2 code for emoji flag construction.
+const FIFA_TO_ISO2: Record<string, string> = {
+  MEX: "MX", RSA: "ZA", KOR: "KR", CZE: "CZ",
+  CAN: "CA", BIH: "BA", QAT: "QA", SUI: "CH",
+  BRA: "BR", MAR: "MA", HAI: "HT",
+  USA: "US", PAR: "PY", AUS: "AU", TUR: "TR",
+  GER: "DE", CUW: "CW", CIV: "CI", ECU: "EC",
+  NED: "NL", JPN: "JP", SWE: "SE", TUN: "TN",
+  BEL: "BE", EGY: "EG", IRN: "IR", NZL: "NZ",
+  ESP: "ES", CPV: "CV", KSA: "SA", URU: "UY",
+  FRA: "FR", SEN: "SN", IRQ: "IQ", NOR: "NO",
+  ARG: "AR", ALG: "DZ", AUT: "AT", JOR: "JO",
+  POR: "PT", COD: "CD", UZB: "UZ", COL: "CO",
+  CRO: "HR", GHA: "GH", PAN: "PA",
+};
+
+// Subdivision flags (England & Scotland don't have ISO alpha-2 codes).
+const FLAG_OVERRIDE: Record<string, string> = {
+  ENG: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  SCO: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+};
+
+function iso2ToEmoji(iso2: string): string {
+  return [...iso2].map((c) =>
+    String.fromCodePoint(0x1f1e6 + c.toUpperCase().charCodeAt(0) - 65),
+  ).join("");
+}
+
+export function flagEmoji(code: string): string | null {
+  if (FLAG_OVERRIDE[code]) return FLAG_OVERRIDE[code];
+  const iso2 = FIFA_TO_ISO2[code];
+  return iso2 ? iso2ToEmoji(iso2) : null;
+}

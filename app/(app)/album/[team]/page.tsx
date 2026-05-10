@@ -91,7 +91,7 @@ export default function CountryDetailPage({
               </h1>
             </div>
           </div>
-          <Flag color={color} w={36} h={26} />
+          <Flag code={team} w={36} h={26} />
         </div>
       </div>
 
