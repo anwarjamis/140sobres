@@ -18,6 +18,8 @@ export async function GET() {
       country: true,
       city: true,
       availableForSwap: true,
+      matchActive: true,
+      whatsapp: true,
       createdAt: true,
     },
   });
@@ -32,14 +34,28 @@ export async function PATCH(req: Request) {
   }
 
   const body = await req.json().catch(() => null);
-  if (body?.availableForSwap === undefined) {
-    return NextResponse.json({ error: "invalid body" }, { status: 400 });
+  if (!body) return NextResponse.json({ error: "invalid body" }, { status: 400 });
+
+  const data: Record<string, unknown> = {};
+
+  if (body.availableForSwap !== undefined) {
+    data.availableForSwap = Boolean(body.availableForSwap);
+  }
+  if (body.matchActive !== undefined) {
+    data.matchActive = Boolean(body.matchActive);
+  }
+  if (body.whatsapp !== undefined) {
+    data.whatsapp = body.whatsapp ? String(body.whatsapp).trim() : null;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "nothing to update" }, { status: 400 });
   }
 
   const user = await prisma.user.update({
     where: { id: session.user.id },
-    data: { availableForSwap: Boolean(body.availableForSwap) },
-    select: { availableForSwap: true },
+    data,
+    select: { availableForSwap: true, matchActive: true, whatsapp: true },
   });
 
   return NextResponse.json(user);

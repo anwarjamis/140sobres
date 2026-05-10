@@ -12,18 +12,25 @@ export type MatchSticker = {
   position: string | null;
 };
 
+export type PingInfo = {
+  id: string;
+  status: "pending_sent" | "pending_received" | "accepted" | "rejected_sent" | "rejected_received";
+} | null;
+
 export type Match = {
   user: {
     id: string;
     username: string;
     country: string | null;
     city: string | null;
+    whatsapp: string | null;
   };
   give: MatchSticker[];
   get: MatchSticker[];
   giveCount: number;
   getCount: number;
   score: number;
+  ping: PingInfo;
 };
 
 async function fetchMatches(): Promise<{ matches: Match[] }> {

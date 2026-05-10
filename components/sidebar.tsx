@@ -57,7 +57,7 @@ export function Sidebar() {
             </div>
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: "/" })}
+              onClick={async () => { await signOut({ redirect: false }); window.location.href = "/login"; }}
               className="text-xs text-white/60 hover:text-white"
             >
               cerrar sesión

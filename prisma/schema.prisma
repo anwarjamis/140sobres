@@ -26,9 +26,28 @@ model User {
   country           String?
   city              String?
   availableForSwap  Boolean  @default(true)
+  matchActive       Boolean  @default(false)
+  whatsapp          String?
   createdAt         DateTime @default(now())
 
-  stickers UserSticker[]
+  stickers      UserSticker[]
+  pingsGiven    MatchPing[]   @relation("PingFrom")
+  pingsReceived MatchPing[]   @relation("PingTo")
+}
+
+model MatchPing {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  status     String   @default("pending") // pending | accepted | rejected
+  createdAt  DateTime @default(now())
+
+  from User @relation("PingFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to   User @relation("PingTo",   fields: [toUserId],   references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([fromUserId])
+  @@index([toUserId])
 }
 
 model Sticker {
