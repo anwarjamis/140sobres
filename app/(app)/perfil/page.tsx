@@ -211,7 +211,10 @@ export default function PerfilPage() {
         {/* logout */}
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: `${window.location.origin}/login` })}
+          onClick={async () => {
+            await signOut({ redirect: false });
+            window.location.href = "/login";
+          }}
           className="btn mt-4"
           style={{
             width: "100%",
