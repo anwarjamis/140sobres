@@ -71,6 +71,30 @@ export default function AlbumPage() {
     [stickers],
   );
 
+  // On first data load, auto-close any section that is already complete.
+  const hasInitialized = useRef(false);
+  useEffect(() => {
+    if (!data || hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    const toClose = new Set<string>();
+
+    if (specialStickers.length > 0 && specialStickers.every((s) => s.owned)) {
+      toClose.add("00");
+    }
+    if (fwcStickers.length > 0 && fwcStickers.every((s) => s.owned)) {
+      toClose.add("FWC");
+    }
+    for (const g of GROUP_LETTERS) {
+      const teams = GROUPS[g];
+      const total = teams.reduce((a, t) => a + (ownedByTeam[t] ?? 0), 0);
+      const max = teams.length * 20;
+      if (max > 0 && total === max) toClose.add(g);
+    }
+
+    if (toClose.size > 0) setClosedGroups(toClose);
+  }, [data, specialStickers, fwcStickers, ownedByTeam]);
+
   function toggleSticker(s: AlbumSticker) {
     mark.mutate({ stickerId: s.id, owned: !s.owned, count: s.owned ? 0 : s.count });
   }
