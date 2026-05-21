@@ -181,7 +181,7 @@ export default function RepesPage() {
               Mis repes
             </h1>
           </div>
-          <div className="row gap-2">
+          <div className="row gap-2 items-center">
             <button
               type="button"
               onClick={handleShare}
