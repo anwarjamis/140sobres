@@ -4,10 +4,10 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { useAlbum } from "@/hooks/use-album";
 import { useMarkSticker } from "@/hooks/use-mark-sticker";
 import { Sticker } from "@/components/sticker";
-import { colorOf } from "@/lib/groups";
+import { colorOf, groupOf } from "@/lib/groups";
 import type { AlbumSticker } from "@/lib/types";
 
-type Filter = "all" | "x3" | "country";
+type Filter = "all" | "x3" | "country" | "group";
 
 export default function RepesPage() {
   const { data, isLoading } = useAlbum();
@@ -87,6 +87,14 @@ export default function RepesPage() {
     if (filter === "x3") list = list.filter((s) => s.count >= 3);
     if (filter === "country") {
       list = [...list].sort((a, b) => a.teamCode.localeCompare(b.teamCode));
+    } else if (filter === "group") {
+      list = [...list].sort((a, b) => {
+        const ga = groupOf(a.teamCode) ?? "Z";
+        const gb = groupOf(b.teamCode) ?? "Z";
+        if (ga !== gb) return ga.localeCompare(gb);
+        if (a.teamCode !== b.teamCode) return a.teamCode.localeCompare(b.teamCode);
+        return a.number - b.number;
+      });
     } else {
       list = [...list].sort((a, b) => b.count - a.count);
     }
@@ -202,6 +210,13 @@ export default function RepesPage() {
             onClick={() => setFilter("country")}
           >
             por país
+          </button>
+          <button
+            type="button"
+            className={`chip ${filter === "group" ? "chip-dark" : ""}`}
+            onClick={() => setFilter("group")}
+          >
+            por grupo
           </button>
         </div>
       </div>
