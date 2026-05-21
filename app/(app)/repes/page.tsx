@@ -77,21 +77,15 @@ export default function RepesPage() {
         if (a.teamCode !== b.teamCode) return a.teamCode.localeCompare(b.teamCode);
         return a.number - b.number;
       });
-    if (sorted.length === 0) return "No tengo repes todavía 🙂";
+    if (sorted.length === 0) return "No tengo repes todavía";
 
-    const lines: string[] = ["🔄 Mis repes - Mundial FWC 2026", ""];
-    let lastTeam = "";
+    const lines: string[] = ["Mis repes FWC 2026", ""];
     for (const s of sorted) {
-      if (s.teamCode !== lastTeam) {
-        if (lastTeam !== "") lines.push("");
-        lines.push(s.teamCode);
-        lastTeam = s.teamCode;
-      }
       const num = String(s.number).padStart(2, "0");
-      const name = s.playerName ? ` ${s.playerName}` : "";
-      lines.push(`  ${num}${name} ×${s.count}`);
+      const name = s.playerName ? ` · ${s.playerName}` : "";
+      const count = s.count > 1 ? ` ×${s.count}` : "";
+      lines.push(`${s.teamCode} ${num}${name}${count}`);
     }
-    lines.push("", "¡Escribime si querés cambiar! 💬");
     return lines.join("\n");
   }
 
