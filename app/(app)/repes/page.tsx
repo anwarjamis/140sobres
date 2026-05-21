@@ -74,13 +74,24 @@ export default function RepesPage() {
     const sorted = [...all]
       .filter((s) => s.count > 0)
       .sort((a, b) => {
+        const ga = groupOf(a.teamCode) ?? "ZZ";
+        const gb = groupOf(b.teamCode) ?? "ZZ";
+        if (ga !== gb) return ga.localeCompare(gb);
         if (a.teamCode !== b.teamCode) return a.teamCode.localeCompare(b.teamCode);
         return a.number - b.number;
       });
     if (sorted.length === 0) return "No tengo repes todavía";
 
-    const lines: string[] = ["Mis repes FWC 2026", ""];
+    const lines: string[] = ["Láminas repetidas para cambiar:", ""];
+    let lastGroup = "";
     for (const s of sorted) {
+      const grp = groupOf(s.teamCode);
+      const grpLabel = grp ? `Grupo ${grp}` : s.section === "FWC" ? "FWC" : "Especiales";
+      if (grpLabel !== lastGroup) {
+        if (lastGroup !== "") lines.push("");
+        lines.push(grpLabel);
+        lastGroup = grpLabel;
+      }
       const num = String(s.number).padStart(2, "0");
       const name = s.playerName ? ` · ${s.playerName}` : "";
       const count = s.count > 1 ? ` ×${s.count}` : "";
@@ -175,25 +186,32 @@ export default function RepesPage() {
               type="button"
               onClick={handleShare}
               disabled={totalRepes === 0}
-              className="btn btn-ghost"
-              style={{ gap: 6, paddingLeft: 11, paddingRight: 13, opacity: totalRepes === 0 ? 0.35 : 1 }}
+              aria-label="Compartir repes"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: "1.5px solid var(--line-2)",
+                background: copied ? "#eaf7ee" : "#fff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: "none",
+                opacity: totalRepes === 0 ? 0.35 : 1,
+                transition: "background 0.15s",
+              }}
             >
               {copied ? (
-                <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round">
-                    <path d="m20 6-11 11-5-5" />
-                  </svg>
-                  <span style={{ color: "var(--green)" }}>¡Copiado!</span>
-                </>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.6" strokeLinecap="round">
+                  <path d="m20 6-11 11-5-5" />
+                </svg>
               ) : (
-                <>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
-                  Compartir
-                </>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
               )}
             </button>
             <button
