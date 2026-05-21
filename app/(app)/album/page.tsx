@@ -615,7 +615,7 @@ function StickerSection({
         onClick={onToggleOpen}
         className="row items-center between w-full text-left"
         style={{
-          padding: "12px 14px",
+          padding: "8px 12px",
           background: "var(--paper-2)",
           borderBottom: isOpen ? "1px solid var(--line)" : "none",
           border: "none",
@@ -623,23 +623,28 @@ function StickerSection({
         }}
         aria-expanded={isOpen}
       >
-        <div className="row items-center gap-3">
+        <div className="row items-center gap-2">
           <div
             className="gletter"
-            style={{ background: isOpen ? color : "var(--ink)", fontSize: 11 }}
+            style={{
+              background: isOpen ? color : "var(--ink)",
+              width: 22,
+              height: 22,
+              fontSize: 11,
+            }}
           >
             {label}
           </div>
           <div>
-            <div className="display" style={{ fontSize: 16 }}>{label}</div>
-            <div className="micro muted">{sublabel}</div>
+            <div className="display" style={{ fontSize: 13 }}>{label}</div>
+            <div className="micro muted" style={{ fontSize: 10 }}>{sublabel}</div>
           </div>
         </div>
-        <div className="col" style={{ alignItems: "flex-end", gap: 4 }}>
-          <div className="mono" style={{ fontSize: 12, fontWeight: 600 }}>
+        <div className="col" style={{ alignItems: "flex-end", gap: 3 }}>
+          <div className="mono" style={{ fontSize: 11, fontWeight: 600 }}>
             {owned}/{total}
           </div>
-          <div style={{ width: 54, height: 4 }} className="progress-track">
+          <div style={{ width: 44, height: 3 }} className="progress-track">
             <div
               className="progress-fill"
               style={{

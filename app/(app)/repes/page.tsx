@@ -19,6 +19,7 @@ export default function RepesPage() {
   const [matchedSticker, setMatchedSticker] = useState<AlbumSticker | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [keepAdding, setKeepAdding] = useState(false);
+  const [copied, setCopied] = useState(false);
   const codeRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus input when modal opens, reset everything.
@@ -68,6 +69,50 @@ export default function RepesPage() {
       setNotFound(true);
     }
   }, [codeInput, data]);
+
+  function buildShareText(): string {
+    const sorted = [...all]
+      .filter((s) => s.count > 0)
+      .sort((a, b) => {
+        if (a.teamCode !== b.teamCode) return a.teamCode.localeCompare(b.teamCode);
+        return a.number - b.number;
+      });
+    if (sorted.length === 0) return "No tengo repes todavía 🙂";
+
+    const lines: string[] = ["🔄 Mis repes - Mundial FWC 2026", ""];
+    let lastTeam = "";
+    for (const s of sorted) {
+      if (s.teamCode !== lastTeam) {
+        if (lastTeam !== "") lines.push("");
+        lines.push(s.teamCode);
+        lastTeam = s.teamCode;
+      }
+      const num = String(s.number).padStart(2, "0");
+      const name = s.playerName ? ` ${s.playerName}` : "";
+      lines.push(`  ${num}${name} ×${s.count}`);
+    }
+    lines.push("", "¡Escribime si querés cambiar! 💬");
+    return lines.join("\n");
+  }
+
+  async function handleShare() {
+    const text = buildShareText();
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ text });
+        return;
+      } catch {
+        // user cancelled — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } catch {
+      // nothing we can do
+    }
+  }
 
   function handleAdd() {
     if (!matchedSticker) return;
@@ -131,17 +176,44 @@ export default function RepesPage() {
               Mis repes
             </h1>
           </div>
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="btn btn-red"
-            style={{ gap: 6, paddingLeft: 12, paddingRight: 14 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Agregar
-          </button>
+          <div className="row gap-2">
+            <button
+              type="button"
+              onClick={handleShare}
+              disabled={totalRepes === 0}
+              className="btn btn-ghost"
+              style={{ gap: 6, paddingLeft: 11, paddingRight: 13, opacity: totalRepes === 0 ? 0.35 : 1 }}
+            >
+              {copied ? (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round">
+                    <path d="m20 6-11 11-5-5" />
+                  </svg>
+                  <span style={{ color: "var(--green)" }}>¡Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
+                  Compartir
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="btn btn-red"
+              style={{ gap: 6, paddingLeft: 12, paddingRight: 14 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Agregar
+            </button>
+          </div>
         </div>
       </div>
 
