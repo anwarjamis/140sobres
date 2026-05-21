@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAlbum } from "@/hooks/use-album";
 import { useMarkSticker } from "@/hooks/use-mark-sticker";
@@ -15,33 +14,23 @@ import {
 import { Flag } from "@/components/flag";
 import type { AlbumSticker } from "@/lib/types";
 
-// useSearchParams() requires a Suspense boundary in Next.js 14.
 export default function AlbumPage() {
-  return (
-    <Suspense>
-      <AlbumContent />
-    </Suspense>
-  );
-}
-
-function AlbumContent() {
   const { data: session } = useSession();
   const { data, isLoading } = useAlbum();
   const mark = useMarkSticker();
-  const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // Restore open group from URL param ?g=A when navigating back.
-  const [openGroup, setOpenGroup] = useState<string | null>(
-    searchParams.get("g"),
-  );
+  // Groups start open; user clicks to close individual ones.
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(new Set());
+  // Track last jump for jump-rail highlight.
+  const [lastJumped, setLastJumped] = useState<string | null>(null);
   const groupRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Keep URL in sync with open group.
-  function setGroup(g: string | null) {
-    setOpenGroup(g);
-    const url = g ? `/album?g=${g}` : "/album";
-    router.replace(url, { scroll: false });
+  function toggleGroup(g: string) {
+    setClosedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(g)) next.delete(g); else next.add(g);
+      return next;
+    });
   }
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -99,22 +88,29 @@ function AlbumContent() {
     );
   }, [searchTerm]);
 
-  // Auto-open the single matching group when searching.
+  // When search narrows to one group, ensure it's open.
   useEffect(() => {
     if (searchTerm && filteredGroupLetters.length === 1) {
-      setGroup(filteredGroupLetters[0]);
-    } else if (!searchTerm) {
-      setGroup(null);
+      setClosedGroups((prev) => {
+        const next = new Set(prev);
+        next.delete(filteredGroupLetters[0]);
+        return next;
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, filteredGroupLetters]);
-  const pct = Math.round((totalOwned / totalAll) * 100);
 
+  const pct = Math.round((totalOwned / totalAll) * 100);
   const username = session?.user?.name ?? "";
   const initial = username.slice(0, 1).toUpperCase() || "·";
 
   function jumpToGroup(g: string) {
-    setGroup(g);
+    setLastJumped(g);
+    // Ensure group is open when jumping to it.
+    setClosedGroups((prev) => {
+      const next = new Set(prev);
+      next.delete(g);
+      return next;
+    });
     requestAnimationFrame(() => {
       groupRefs.current[g]?.scrollIntoView({
         behavior: "smooth",
@@ -304,7 +300,7 @@ function AlbumContent() {
             <button
               key={g}
               onClick={() => jumpToGroup(g)}
-              className={`gjump ${openGroup === g ? "on" : ""}`}
+              className={`gjump ${lastJumped === g ? "on" : ""}`}
               style={{ minWidth: 0, padding: 0, height: 28, fontSize: 12 }}
             >
               {g}
@@ -312,7 +308,7 @@ function AlbumContent() {
           ))}
           <button
             onClick={() => jumpToGroup("FWC")}
-            className={`gjump ${openGroup === "FWC" ? "on" : ""}`}
+            className={`gjump ${lastJumped === "FWC" ? "on" : ""}`}
             style={{ minWidth: 0, padding: 0, height: 28, fontSize: 9, fontWeight: 700 }}
           >
             FWC
@@ -330,8 +326,8 @@ function AlbumContent() {
               sublabel="Lámina especial"
               stickers={specialStickers}
               color="var(--purple)"
-              isOpen={openGroup === "00"}
-              onToggleOpen={() => setGroup(openGroup === "00" ? null : "00")}
+              isOpen={!closedGroups.has("00")}
+              onToggleOpen={() => toggleGroup("00")}
               onToggleSticker={toggleSticker}
               sectionRef={(el) => { groupRefs.current["00"] = el; }}
             />
@@ -344,8 +340,8 @@ function AlbumContent() {
               sublabel="FIFA World Cup · 19 láminas"
               stickers={fwcStickers}
               color="var(--yellow)"
-              isOpen={openGroup === "FWC"}
-              onToggleOpen={() => setGroup(openGroup === "FWC" ? null : "FWC")}
+              isOpen={!closedGroups.has("FWC")}
+              onToggleOpen={() => toggleGroup("FWC")}
               onToggleSticker={toggleSticker}
               sectionRef={(el) => { groupRefs.current["FWC"] = el; }}
             />
@@ -364,7 +360,7 @@ function AlbumContent() {
             );
             const max = teams.length * 20;
             const groupPct = Math.round((total / max) * 100);
-            const isOpen = openGroup === g;
+            const isOpen = !closedGroups.has(g);
             return (
               <div
                 key={g}
@@ -376,10 +372,10 @@ function AlbumContent() {
               >
                 <button
                   type="button"
-                  onClick={() => setGroup(isOpen ? null : g)}
+                  onClick={() => toggleGroup(g)}
                   className="row items-center between w-full text-left"
                   style={{
-                    padding: "12px 14px",
+                    padding: "8px 12px",
                     background: "var(--paper-2)",
                     borderBottom: isOpen ? "1px solid var(--line)" : "none",
                     border: "none",
@@ -387,36 +383,39 @@ function AlbumContent() {
                   }}
                   aria-expanded={isOpen}
                 >
-                  <div className="row items-center gap-3">
+                  <div className="row items-center gap-2">
                     <div
                       className="gletter"
                       style={{
                         background: isOpen ? "var(--red)" : "var(--ink)",
+                        width: 22,
+                        height: 22,
+                        fontSize: 11,
                       }}
                     >
                       {g}
                     </div>
                     <div>
-                      <div className="display" style={{ fontSize: 16 }}>
+                      <div className="display" style={{ fontSize: 13 }}>
                         Grupo {g}
                       </div>
-                      <div className="micro muted">
+                      <div className="micro muted" style={{ fontSize: 10 }}>
                         {teams.length} selecciones
                       </div>
                     </div>
                   </div>
                   <div
                     className="col"
-                    style={{ alignItems: "flex-end", gap: 4 }}
+                    style={{ alignItems: "flex-end", gap: 3 }}
                   >
                     <div
                       className="mono"
-                      style={{ fontSize: 12, fontWeight: 600 }}
+                      style={{ fontSize: 11, fontWeight: 600 }}
                     >
                       {total}/{max}
                     </div>
                     <div
-                      style={{ width: 54, height: 4 }}
+                      style={{ width: 44, height: 3 }}
                       className="progress-track"
                     >
                       <div
