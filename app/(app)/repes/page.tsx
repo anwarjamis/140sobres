@@ -18,6 +18,7 @@ export default function RepesPage() {
   const [qty, setQty] = useState(1);
   const [matchedSticker, setMatchedSticker] = useState<AlbumSticker | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [lastSaved, setLastSaved] = useState<{ name: string; qty: number } | null>(null);
   const codeRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus input when modal opens.
@@ -27,9 +28,19 @@ export default function RepesPage() {
       setQty(1);
       setMatchedSticker(null);
       setNotFound(false);
+      setLastSaved(null);
       setTimeout(() => codeRef.current?.focus(), 80);
     }
   }, [modalOpen]);
+
+  function resetForm() {
+    setCodeInput("");
+    setQty(1);
+    setMatchedSticker(null);
+    setNotFound(false);
+    setLastSaved(null);
+    setTimeout(() => codeRef.current?.focus(), 80);
+  }
 
   // Live-search sticker by code as user types.
   useEffect(() => {
@@ -61,9 +72,10 @@ export default function RepesPage() {
 
   function handleAdd() {
     if (!matchedSticker) return;
+    const name = matchedSticker.playerName ?? matchedSticker.code;
     mark.mutate(
       { stickerId: matchedSticker.id, count: qty },
-      { onSuccess: () => setModalOpen(false) },
+      { onSuccess: () => setLastSaved({ name, qty }) },
     );
   }
 
@@ -505,25 +517,76 @@ export default function RepesPage() {
             )}
 
             {/* actions */}
-            <div className="col gap-2" style={{ marginTop: 20 }}>
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={!matchedSticker || mark.isPending}
-                className="btn btn-red"
-                style={{ width: "100%", justifyContent: "center", opacity: !matchedSticker ? 0.4 : 1 }}
-              >
-                {mark.isPending ? "Guardando…" : "Guardar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="btn btn-ghost"
-                style={{ width: "100%", justifyContent: "center" }}
-              >
-                Cancelar
-              </button>
-            </div>
+            {lastSaved ? (
+              <div style={{ marginTop: 20 }}>
+                {/* confirmación */}
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    background: "#eaf7ee",
+                    borderRadius: 12,
+                    border: "1px solid #a8dcb8",
+                    marginBottom: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round">
+                    <path d="m20 6-11 11-5-5" />
+                  </svg>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-ui)", fontWeight: 600, fontSize: 14, color: "var(--green)" }}>
+                      Guardada
+                    </div>
+                    <div className="mono micro" style={{ color: "var(--ink-3)", marginTop: 1 }}>
+                      {lastSaved.name} · {lastSaved.qty} {lastSaved.qty === 1 ? "repe" : "repes"}
+                    </div>
+                  </div>
+                </div>
+                <div className="col gap-2">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="btn btn-red"
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Agregar más
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(false)}
+                    className="btn btn-ghost"
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    Listo
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="col gap-2" style={{ marginTop: 20 }}>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={!matchedSticker || mark.isPending}
+                  className="btn btn-red"
+                  style={{ width: "100%", justifyContent: "center", opacity: !matchedSticker ? 0.4 : 1 }}
+                >
+                  {mark.isPending ? "Guardando…" : "Guardar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="btn btn-ghost"
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
