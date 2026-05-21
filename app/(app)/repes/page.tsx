@@ -62,8 +62,8 @@ export default function RepesPage() {
     if (sticker) {
       setMatchedSticker(sticker);
       setNotFound(false);
-      // Pre-fill with current extras count.
-      setQty(Math.max(1, sticker.count ?? 1));
+      // Always start at 1 — if sticker already has repes we add on top
+      setQty(1);
     } else {
       setMatchedSticker(null);
       setNotFound(true);
@@ -73,9 +73,10 @@ export default function RepesPage() {
   function handleAdd() {
     if (!matchedSticker) return;
     const name = matchedSticker.playerName ?? matchedSticker.code;
+    const newCount = (matchedSticker.count ?? 0) + qty;
     mark.mutate(
-      { stickerId: matchedSticker.id, count: qty },
-      { onSuccess: () => setLastSaved({ name, qty }) },
+      { stickerId: matchedSticker.id, count: newCount },
+      { onSuccess: () => setLastSaved({ name, qty: newCount }) },
     );
   }
 
@@ -459,6 +460,25 @@ export default function RepesPage() {
                     </div>
                   </div>
                 </div>
+                {matchedSticker.count > 0 && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: "8px 12px",
+                      background: "#eef4ff",
+                      border: "1px solid #b8d0f5",
+                      borderRadius: 10,
+                      fontSize: 12,
+                      color: "#1a4a8a",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>ℹ️</span>
+                    Ya tenés <strong>×{matchedSticker.count}</strong> de esta lámina — se van a sumar las que agregues.
+                  </div>
+                )}
                 {!matchedSticker.owned && (
                   <div
                     style={{
@@ -486,7 +506,9 @@ export default function RepesPage() {
             {/* cantidad */}
             {matchedSticker && (
               <div className="field" style={{ marginTop: 12 }}>
-                <label>¿cuántas repetidas tenés?</label>
+                <label>
+                  {matchedSticker.count > 0 ? "¿cuántas más agregás?" : "¿cuántas repetidas tenés?"}
+                </label>
                 <div className="row items-center gap-3">
                   <button
                     type="button"
