@@ -10,6 +10,7 @@ import {
   GROUPS,
   GROUP_LETTERS,
   COUNTRY_NAMES,
+  colorOf,
 } from "@/lib/groups";
 import { Flag } from "@/components/flag";
 import type { AlbumSticker } from "@/lib/types";
@@ -58,6 +59,19 @@ function AlbumContent() {
 
   const totalOwned = stickers.filter((s) => s.owned).length;
   const totalAll = 980;
+
+  const stickersByTeam = useMemo(() => {
+    const m: Record<string, AlbumSticker[]> = {};
+    for (const s of stickers) {
+      if (s.section !== "COUNTRY") continue;
+      if (!m[s.teamCode]) m[s.teamCode] = [];
+      m[s.teamCode].push(s);
+    }
+    for (const tc of Object.keys(m)) {
+      m[tc].sort((a, b) => a.number - b.number);
+    }
+    return m;
+  }, [stickers]);
 
   const fwcStickers = useMemo(
     () => stickers.filter((s) => s.section === "FWC").sort((a, b) => a.number - b.number),
@@ -211,38 +225,6 @@ function AlbumContent() {
             />
           </div>
         </div>
-      </div>
-
-      {/* quick actions row */}
-      <div className="px-4 mt-3 row gap-2">
-        <Link
-          href="/album/masiva"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            height: 34,
-            paddingLeft: 14,
-            paddingRight: 14,
-            borderRadius: 99,
-            border: "1.5px solid var(--line-2)",
-            background: "#fff",
-            color: "var(--ink)",
-            fontFamily: "var(--font-ui)",
-            fontWeight: 600,
-            fontSize: 13,
-            textDecoration: "none",
-            flex: "none",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-          Carga masiva
-        </Link>
       </div>
 
       {/* search */}
@@ -453,83 +435,112 @@ function AlbumContent() {
 
                 <div
                   style={{
-                    maxHeight: isOpen ? 600 : 0,
+                    maxHeight: isOpen ? 1200 : 0,
                     overflow: "hidden",
-                    transition: "max-height 220ms ease-out",
+                    transition: "max-height 280ms ease-out",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                    }}
-                  >
+                  <div style={{ paddingBottom: 6 }}>
                     {teams.map((teamCode, ti) => {
+                      const teamStickers = stickersByTeam[teamCode] ?? [];
                       const count = ownedByTeam[teamCode] ?? 0;
-                      const complete = count === 20;
-                      const empty = count === 0;
+                      const badgeColor = colorOf(teamCode);
+                      // light colors need dark text
+                      const badgeTextColor = ["var(--yellow)", "var(--orange)", "#fafafa", "var(--sand)"].includes(badgeColor)
+                        ? "var(--ink)"
+                        : "#fff";
                       return (
-                        <Link
-                          key={teamCode}
-                          href={`/album/${teamCode}`}
-                          className="row between items-center"
-                          style={{
-                            padding: "10px 12px",
-                            borderRight:
-                              ti % 2 === 0
-                                ? "1px solid var(--line)"
-                                : "none",
-                            borderTop:
-                              ti > 1 ? "1px solid var(--line)" : "none",
-                            color: "var(--ink)",
-                            textDecoration: "none",
-                          }}
-                        >
+                        <div key={teamCode}>
+                          {ti > 0 && (
+                            <div
+                              style={{
+                                height: 1,
+                                background: "var(--line)",
+                                margin: "0 14px",
+                              }}
+                            />
+                          )}
+                          {/* country header */}
                           <div
-                            className="row items-center gap-2"
-                            style={{ minWidth: 0 }}
+                            className="row between items-center"
+                            style={{ padding: "9px 14px 5px" }}
                           >
-                            <Flag code={teamCode} w={20} h={14} />
-                            <div style={{ minWidth: 0 }}>
-                              <div
+                            <Link
+                              href={`/album/${teamCode}`}
+                              className="row items-center gap-2"
+                              style={{ color: "var(--ink)", textDecoration: "none" }}
+                            >
+                              <Flag code={teamCode} w={20} h={14} />
+                              <span
                                 style={{
                                   fontFamily: "var(--font-ui)",
                                   fontWeight: 600,
-                                  fontSize: 13.5,
-                                  color: "var(--ink)",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
+                                  fontSize: 13,
                                 }}
                               >
                                 {COUNTRY_NAMES[teamCode] ?? teamCode}
-                              </div>
-                              <div
-                                className="mono"
+                              </span>
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#bbb"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                              >
+                                <path d="m9 6 6 6-6 6" />
+                              </svg>
+                            </Link>
+                            <span
+                              className="mono"
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: count === 20 ? "var(--green)" : "var(--muted)",
+                              }}
+                            >
+                              {count}/20{count === 20 ? " ✓" : ""}
+                            </span>
+                          </div>
+                          {/* badge grid */}
+                          <div
+                            style={{
+                              padding: "0 14px 10px",
+                              display: "grid",
+                              gridTemplateColumns: "repeat(10, 1fr)",
+                              gap: 3,
+                            }}
+                          >
+                            {teamStickers.map((s) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => toggleSticker(s)}
+                                title={s.playerName ?? s.code}
                                 style={{
-                                  fontSize: 10.5,
-                                  color: empty
-                                    ? "#bbb"
-                                    : "var(--muted)",
+                                  aspectRatio: "1",
+                                  borderRadius: 5,
+                                  border: s.owned ? "none" : "1.5px solid var(--line-2)",
+                                  background: s.owned ? badgeColor : "#f4f4f2",
+                                  color: s.owned ? badgeTextColor : "var(--muted)",
+                                  fontFamily: "var(--font-mono)",
+                                  fontWeight: 700,
+                                  fontSize: 10,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: 0,
+                                  transition: "background 0.12s",
+                                  WebkitTapHighlightColor: "transparent",
                                 }}
                               >
-                                {count}/20 {complete ? "✓" : ""}
-                              </div>
-                            </div>
+                                {s.number}
+                              </button>
+                            ))}
                           </div>
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#9c9c9c"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="m9 6 6 6-6 6" />
-                          </svg>
-                        </Link>
+                        </div>
                       );
                     })}
                   </div>
